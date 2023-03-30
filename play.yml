@@ -1,0 +1,112 @@
+---
+  - hosts: "all"
+    become: yes
+    become_user: root
+    tasks:
+         - name: Update cache
+           ansible.builtin.apt:
+             update_cache: yes
+         - name: Install curl
+           ansible.builtin.apt:
+             name: curl
+             state: latest
+         - name: install UFW
+           ansible.builtin.apt:
+             name: ufw
+             state: latest
+         - name: Enable UFW
+           community.general.ufw:
+             state: enabled
+             policy: allow
+         - name: Allow port 80
+           community.general.ufw:
+             rule: allow
+             port: '80'
+             proto: tcp
+         - name: Allow port 8080
+           community.general.ufw:
+             rule: allow
+             port: '8080'
+             proto: tcp
+         - name: Allow port 1723
+           community.general.ufw:
+             rule: allow
+             port: '1723'
+             proto: tcp
+         - name: SSH replace port to 1723
+           become: yes
+           ansible.builtin.lineinfile:
+             path: /etc/ssh/sshd_config
+             regexp: '^Port'
+             line: Port 1723
+             owner: root
+             group: root
+             mode: '0644'
+         - name: Allow public key auth
+           ansible.builtin.lineinfile:
+             path: /etc/ssh/sshd_config
+             regexp: '^#PubkeyAuthentication'
+             line: PubkeyAuthentication yes
+             owner: root
+             group: root
+             mode: '0644'
+         - name: Create user1
+           ansible.builtin.user:
+             name: Webdeveloper
+             password: DFAB8B9DAF045C64571E23613784BE5A
+         - name: Create user2
+           ansible.builtin.user:
+             name: Devopsengineer
+             password: E09CD8E6E45CE1A24416C777FD3805EB
+         - name: Create user3
+           ansible.builtin.user:
+             name: Projectmanager
+             password: 110A5076F796FACC1062D60FFB770B82
+         - name: Install required system packages
+           apt:
+             pkg:
+               - apt-transport-https
+               - ca-certificates
+               - curl
+               - software-properties-common
+               - python3-pip
+               - virtualenv
+               - python3-setuptools
+             state: latest
+             update_cache: true
+         - name: Add Docker GPG apt Key
+           apt_key:
+             url: https://download.docker.com/linux/ubuntu/gpg
+             state: present
+         - name: Add Docker Repository
+           apt_repository:
+             repo: deb https://download.docker.com/linux/ubuntu focal stable
+             state: present
+         - name: Update apt and install docker-ce
+           apt:
+             name: docker-ce
+             state: latest
+             update_cache: true
+         - name: Add "root" user to "docker" group
+           remote_user: root
+           user:
+             name: "root"
+             group: "docker"
+             append: yes
+           tags:
+             - docker
+         - name: Install docker-compose from official github repo
+           remote_user: ansible_ubuntu_demo
+           get_url:
+             url: https://github.com/docker/compose/releases/download/v2.17.1/docker-compose-linux-x86_64
+             dest: /usr/local/bin/docker-compose
+             mode: 'u+x,g+x'
+         - name: Restart services SSH and UFW
+           service:
+             name: "{{ item }}"
+             state: restarted
+           with_items:
+               - ssh
+               - ufw
+           loop_control:
+               pause: 3
