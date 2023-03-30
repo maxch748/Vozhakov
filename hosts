@@ -1,1 +1,4 @@
-
+10.39.139.51 ansible_user=root ansible_password=toortoor ansible_become_password=toortoor
+10.39.139.52 ansible_user=root ansible_password=toortoor ansible_become_password=toortoor
+10.39.139.53 ansible_user=root ansible_password=toortoor ansible_become_password=toortoor
+10.39.139.54 ansible_user=root ansible_password=toortoor ansible_become_password=toortoor
